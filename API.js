@@ -1,10 +1,11 @@
 const express = require('express');
+const cors = require('cors');
 const app = express();
 const PORT = 6969;
 
+app.use(cors());
 app.use(express.json());
 
-// Mock Database
 let userWatchlists = [
     { userId: 1, animeId: 101, status: "watching", progress: 12 },
     { userId: 1, animeId: 205, status: "completed", progress: 24 }
