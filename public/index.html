@@ -91,8 +91,6 @@
 </section>
 
 <script>
-  const API_BASE = "http://localhost:6969";
-
   function showOutput(data) {
     document.getElementById("output").textContent =
       JSON.stringify(data, null, 2);
@@ -100,7 +98,7 @@
 
   async function getCollection() {
     const userId = document.getElementById("getUserId").value;
-    const res = await fetch(`${API_BASE}/collection/${userId}`);
+    const res = await fetch(`collection/${userId}`);
     showOutput(await res.json());
   }
 
@@ -112,7 +110,7 @@
       source: document.getElementById("source").value
     };
 
-    const res = await fetch(`${API_BASE}/collection/add`, {
+    const res = await fetch(`collection/add`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
@@ -129,7 +127,7 @@
       progress: Number(document.getElementById("progress").value)
     };
 
-    const res = await fetch(`${API_BASE}/collection/update`, {
+    const res = await fetch(`collection/update`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
@@ -145,7 +143,7 @@
       mediaType: document.getElementById("delMediaType").value
     };
 
-    const res = await fetch(`${API_BASE}/collection/remove`, {
+    const res = await fetch(`collection/remove`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
