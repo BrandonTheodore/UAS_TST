@@ -1,5 +1,12 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
+
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('/', (_, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 const app = express();
 const PORT = 6969;
@@ -10,7 +17,7 @@ app.use(express.json());
 let userCollections = [
   {
     userId: 1,
-    itemId: "101",
+    itemId: 101,
     mediaType: "anime",
     source: "anilist",
     status: "watching",
@@ -18,7 +25,7 @@ let userCollections = [
   },
   {
     userId: 1,
-    itemId: "205",
+    itemId: 205,
     mediaType: "anime",
     source: "mal",
     status: "completed",
@@ -38,6 +45,10 @@ function addItemToCollection(data) {
     source = "unknown",
     status = "planned"
   } = data;
+
+  if (!Number.isInteger(itemId)) {
+    throw new Error("itemId must be an integer");
+  }
 
   if (!userId || !itemId || !mediaType) {
     throw new Error("userId, itemId, and mediaType are required");
@@ -60,14 +71,14 @@ function updateProgress({ userId, itemId, mediaType, progress }) {
   const item = userCollections.find(
     i =>
       i.userId === userId &&
-      i.itemId === itemId &&
+      i.itemId === Number(itemId) &&
       i.mediaType === mediaType
   );
 
   if (!item) return null;
 
   item.progress = progress;
-  return item;
+  return item || null;
 }
 
 function removeItem({ userId, itemId, mediaType }) {
