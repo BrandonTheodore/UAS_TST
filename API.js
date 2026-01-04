@@ -1,60 +1,139 @@
 const express = require('express');
 const cors = require('cors');
+
 const app = express();
 const PORT = 6969;
 
 app.use(cors());
 app.use(express.json());
 
-let userWatchlists = [
-    { userId: 1, animeId: 101, status: "watching", progress: 12 },
-    { userId: 1, animeId: 205, status: "completed", progress: 24 }
+let userCollections = [
+  {
+    userId: 1,
+    itemId: "101",
+    mediaType: "anime",
+    source: "anilist",
+    status: "watching",
+    progress: 12
+  },
+  {
+    userId: 1,
+    itemId: "205",
+    mediaType: "anime",
+    source: "mal",
+    status: "completed",
+    progress: 24
+  }
 ];
 
-// 1. GET: Fetch a specific user's watchlist
-app.get('/watchlist/:userId', (req, res) => {
-    const userId = parseInt(req.params.userId);
-    const list = userWatchlists.filter(item => item.userId === userId);
-    res.json(list);
+function getUserCollection(userId) {
+  return userCollections.filter(i => i.userId === userId);
+}
+
+function addItemToCollection(data) {
+  const {
+    userId,
+    itemId,
+    mediaType,
+    source = "unknown",
+    status = "planned"
+  } = data;
+
+  if (!userId || !itemId || !mediaType) {
+    throw new Error("userId, itemId, and mediaType are required");
+  }
+
+  const newItem = {
+    userId,
+    itemId,
+    mediaType,
+    source,
+    status,
+    progress: 0
+  };
+
+  userCollections.push(newItem);
+  return newItem;
+}
+
+function updateProgress({ userId, itemId, mediaType, progress }) {
+  const item = userCollections.find(
+    i =>
+      i.userId === userId &&
+      i.itemId === itemId &&
+      i.mediaType === mediaType
+  );
+
+  if (!item) return null;
+
+  item.progress = progress;
+  return item;
+}
+
+function removeItem({ userId, itemId, mediaType }) {
+  const initialLength = userCollections.length;
+
+  userCollections = userCollections.filter(
+    i =>
+      !(
+        i.userId === userId &&
+        i.itemId === itemId &&
+        i.mediaType === mediaType
+      )
+  );
+
+  return userCollections.length !== initialLength;
+}
+
+app.get('/collection/:userId', (req, res) => {
+  const userId = parseInt(req.params.userId);
+  const data = getUserCollection(userId);
+  res.json(data);
 });
 
-// 2. POST: Add a new anime to the watchlist (The Integration Point)
-// This is where you'd send the animeId you got from API 1
-app.post('/watchlist/add', (req, res) => {
-    const { userId, animeId, status } = req.body;
-    
-    const newItem = {
-        userId,
-        animeId, // This ID matches the ID from API 1
-        status: status || "plan-to-watch",
-        progress: 0
-    };
-
-    userWatchlists.push(newItem);
-    res.status(201).json({ message: "Added to watchlist!", data: newItem });
+app.post('/collection/add', (req, res) => {
+  try {
+    const newItem = addItemToCollection(req.body);
+    res.status(201).json({
+      message: "Item added to collection",
+      data: newItem
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
-// 3. PATCH: Update watching progress
-app.patch('/watchlist/update', (req, res) => {
-    const { userId, animeId, progress } = req.body;
-    
-    const item = userWatchlists.find(i => i.userId === userId && i.animeId === animeId);
-    
-    if (item) {
-        item.progress = progress;
-        return res.json({ message: "Progress updated", item });
-    }
-    
-    res.status(404).json({ message: "Anime not found in user's list" });
+app.patch('/collection/update', (req, res) => {
+  const updated = updateProgress(req.body);
+
+  if (!updated) {
+    return res.status(404).json({ message: "Item not found" });
+  }
+
+  res.json({
+    message: "Progress updated",
+    data: updated
+  });
 });
 
-// 4. DELETE: Remove from watchlist
-app.delete('/watchlist/remove', (req, res) => {
-    const { userId, animeId } = req.body;
-    userWatchlists = userWatchlists.filter(i => !(i.userId === userId && i.animeId === animeId));
-    res.json({ message: "Removed from watchlist" });
+app.delete('/collection/remove', (req, res) => {
+  const removed = removeItem(req.body);
+
+  if (!removed) {
+    return res.status(404).json({ message: "Item not found" });
+  }
+
+  res.json({ message: "Item removed" });
+});
+
+app.get('/health', (_, res) => {
+  res.json({
+    service: "collection-service",
+    status: "healthy",
+    timestamp: new Date()
+  });
 });
 
 app.listen(PORT, () => {
-    console.log(`Tracker Service running on http://localhost:${PORT}`);
+  console.log(`Collection Service running on http://localhost:${PORT}`);
 });
