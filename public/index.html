@@ -105,7 +105,7 @@
   async function addItem() {
     const body = {
       userId: Number(document.getElementById("addUserId").value),
-      itemId: document.getElementById("itemId").value,
+      itemId: Number(document.getElementById("itemId").value),
       mediaType: document.getElementById("mediaType").value,
       source: document.getElementById("source").value
     };
@@ -122,7 +122,7 @@
   async function updateProgress() {
     const body = {
       userId: Number(document.getElementById("updUserId").value),
-      itemId: document.getElementById("updItemId").value,
+      itemId: Number(document.getElementById("updItemId").value),
       mediaType: document.getElementById("updMediaType").value,
       progress: Number(document.getElementById("progress").value)
     };
@@ -139,7 +139,7 @@
   async function removeItem() {
     const body = {
       userId: Number(document.getElementById("delUserId").value),
-      itemId: document.getElementById("delItemId").value,
+      itemId: Number(document.getElementById("delItemId").value),
       mediaType: document.getElementById("delMediaType").value
     };
 
