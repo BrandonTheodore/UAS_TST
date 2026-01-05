@@ -1,54 +1,50 @@
 <html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Media Collection Tracker</title>
+  <title>Film Tracker</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       margin: 30px;
       background: #3d3dbf;
     }
-    h1 {
-      margin-bottom: 10px;
-    }
     section {
       background: #fff;
       padding: 15px;
       margin-bottom: 20px;
       border-radius: 6px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
     }
     input, select, button {
       margin: 5px 0;
       padding: 6px;
       width: 100%;
     }
-    button {
-      cursor: pointer;
-    }
     pre {
       background: #111;
       color: #0f0;
       padding: 10px;
-      overflow-x: auto;
     }
   </style>
 </head>
 <body>
 
-<h1>📚 Media Collection Tracker</h1>
-<p>Simple frontend for Collection Microservice</p>
+<h1>Film Tracker</h1>
+
+<section>
+  <h3>Add User</h3>
+  <input id="newUsername" placeholder="Username">
+  <button onclick="addUser()">Create User</button>
+</section>
 
 <section>
   <h3>Get User Collection</h3>
-  <input id="getUserId" type="number" placeholder="User ID" value="1">
-  <button onclick="getCollection()">Fetch Collection</button>
+  <input id="getUserId" type="number" value="1">
+  <button onclick="getCollection()">Fetch</button>
 </section>
 
 <section>
   <h3>Add Item</h3>
-  <input id="addUserId" type="number" placeholder="User ID" value="1">
-  <input id="itemId" placeholder="Item ID">
+  <input id="addUserId" type="number" value="1">
+  <input id="itemId" placeholder="Item ID (integer)">
   <select id="mediaType">
     <option value="anime">Anime</option>
     <option value="manga">Manga</option>
@@ -57,12 +53,12 @@
     <option value="game">Game</option>
   </select>
   <input id="source" placeholder="Source (anilist, mal, tmdb)">
-  <button onclick="addItem()">Add Item</button>
+  <button onclick="addItem()">Add</button>
 </section>
 
 <section>
   <h3>Update Progress</h3>
-  <input id="updUserId" type="number" placeholder="User ID" value="1">
+  <input id="updUserId" type="number" value="1">
   <input id="updItemId" placeholder="Item ID">
   <select id="updMediaType">
     <option value="anime">Anime</option>
@@ -75,7 +71,7 @@
 
 <section>
   <h3>Remove Item</h3>
-  <input id="delUserId" type="number" placeholder="User ID" value="1">
+  <input id="delUserId" type="number" value="1">
   <input id="delItemId" placeholder="Item ID">
   <select id="delMediaType">
     <option value="anime">Anime</option>
@@ -87,7 +83,7 @@
 
 <section>
   <h3>API Response</h3>
-  <pre id="output">Waiting for action...</pre>
+  <pre id="output">Waiting...</pre>
 </section>
 
 <script>
@@ -96,9 +92,21 @@
       JSON.stringify(data, null, 2);
   }
 
+  async function addUser() {
+    const username = document.getElementById("newUsername").value;
+
+    const res = await fetch(`/users/add`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username })
+    });
+
+    showOutput(await res.json());
+  }
+
   async function getCollection() {
     const userId = document.getElementById("getUserId").value;
-    const res = await fetch(`collection/${userId}`);
+    const res = await fetch(`/collection/${userId}`);
     showOutput(await res.json());
   }
 
@@ -110,7 +118,7 @@
       source: document.getElementById("source").value
     };
 
-    const res = await fetch(`collection/add`, {
+    const res = await fetch(`/collection/add`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
@@ -127,7 +135,7 @@
       progress: Number(document.getElementById("progress").value)
     };
 
-    const res = await fetch(`collection/update`, {
+    const res = await fetch(`/collection/update`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
@@ -143,7 +151,7 @@
       mediaType: document.getElementById("delMediaType").value
     };
 
-    const res = await fetch(`collection/remove`, {
+    const res = await fetch(`/collection/remove`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)

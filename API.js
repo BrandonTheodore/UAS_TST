@@ -14,6 +14,11 @@ app.get('/', (_, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+let users = [
+  { userId: 1, username: "theo" },
+  { userId: 2, username: "guest" }
+];
+
 let userCollections = [
   {
     userId: 1,
@@ -33,8 +38,51 @@ let userCollections = [
   }
 ];
 
+function getUserById(userId) {
+  return users.find(u => u.userId === userId);
+}
+
+function generateUserId() {
+  return users.length
+    ? Math.max(...users.map(u => u.userId)) + 1
+    : 1;
+}
+
+function addUser({ username }) {
+  if (!username || typeof username !== "string") {
+    throw new Error("username is required");
+  }
+
+  const exists = users.some(
+    u => u.username.toLowerCase() === username.toLowerCase()
+  );
+
+  if (exists) {
+    throw new Error("username already exists");
+  }
+
+  const newUser = {
+    userId: generateUserId(),
+    username
+  };
+
+  users.push(newUser);
+  return newUser;
+}
+
 function getUserCollection(userId) {
-  return userCollections.filter(i => i.userId === userId);
+  const user = getUserById(userId);
+  if (!user) return null;
+
+  const items = userCollections
+    .filter(i => i.userId === userId)
+    .map(({ userId, ...item }) => item);
+
+  return {
+    userId: user.userId,
+    username: user.username,
+    items
+  };
 }
 
 function addItemToCollection(data) {
@@ -46,12 +94,16 @@ function addItemToCollection(data) {
     status = "planned"
   } = data;
 
+  if (!getUserById(userId)) {
+    throw new Error("User does not exist");
+  }
+
   if (!Number.isInteger(itemId)) {
     throw new Error("itemId must be an integer");
   }
 
-  if (!userId || !itemId || !mediaType) {
-    throw new Error("userId, itemId, and mediaType are required");
+  if (!userId || !mediaType) {
+    throw new Error("userId and mediaType are required");
   }
 
   const newItem = {
@@ -64,7 +116,9 @@ function addItemToCollection(data) {
   };
 
   userCollections.push(newItem);
-  return newItem;
+
+  const { userId: _, ...cleanItem } = newItem;
+  return cleanItem;
 }
 
 function updateProgress({ userId, itemId, mediaType, progress }) {
@@ -78,36 +132,58 @@ function updateProgress({ userId, itemId, mediaType, progress }) {
   if (!item) return null;
 
   item.progress = progress;
-  return item || null;
+  const { userId: _, ...cleanItem } = item;
+  return cleanItem;
 }
 
 function removeItem({ userId, itemId, mediaType }) {
-  const initialLength = userCollections.length;
+  const before = userCollections.length;
 
   userCollections = userCollections.filter(
     i =>
       !(
         i.userId === userId &&
-        i.itemId === itemId &&
+        i.itemId === Number(itemId) &&
         i.mediaType === mediaType
       )
   );
 
-  return userCollections.length !== initialLength;
+  return userCollections.length !== before;
 }
+
+app.post('/users/add', (req, res) => {
+  try {
+    const user = addUser(req.body);
+    res.status(201).json({
+      message: "User created",
+      data: user
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.get('/users', (_, res) => {
+  res.json(users);
+});
 
 app.get('/collection/:userId', (req, res) => {
   const userId = parseInt(req.params.userId);
   const data = getUserCollection(userId);
+
+  if (!data) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
   res.json(data);
 });
 
 app.post('/collection/add', (req, res) => {
   try {
-    const newItem = addItemToCollection(req.body);
+    const item = addItemToCollection(req.body);
     res.status(201).json({
-      message: "Item added to collection",
-      data: newItem
+      message: "Item added",
+      data: item
     });
   } catch (err) {
     res.status(400).json({ error: err.message });
